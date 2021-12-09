@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  # eureka
+  eureka:
+    image: tuananh2582000/eureka
+    container_name: eureka
+
+    ports:
+      - "8761:8761"
+    networks:
+      - microservice
+
+  # cloud server
+  cloud-server:
+    image: tuananh2582000/cloud-server
+    container_name: cloud-server
+    ports:
+      - "8888:8888"
+    environment:
+      spring.cloud.config.server.git.default-label: main
+    networks:
+      - microservice
+
+  # api-getway
+  api-gateway:
+    image: tuananh2582000/api-gateway
+    container_name: gateway
+    build:
+      context: api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "9191:9191"
+    environment:
+      spring.cloud.config.uri: http://cloud-server:8888
+    depends_on:
+      - cloud-serverdoc
+      - eureka
+    networks:
+      - microservice
+
+  # my sql
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: diem66
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - microservice
+
+  # user-service
+  user-service:
+    image: tuananh2582000/user-service
+    container_name: user-service
+    depends_on:
+      - db
+      - cloud-server
+      - eureka
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/userdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: diem66
+      spring.cloud.config.uri: http://cloud-server:8888
+    networks:
+      - microservice
+
+  # note-service:
+  note-service:
+    image: tuananh2582000/note-service
+    container_name: note-service
+    depends_on:
+      - db
+      - cloud-server
+      - eureka
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/notedb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: diem66
+      spring.cloud.config.uri: http://cloud-server:8888
+    networks:
+      - microservice
+
+networks:
+  microservice:
+    driver: bridge
