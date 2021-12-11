@@ -5,12 +5,26 @@ services:
   eureka:
     image: tuananh2582000/eureka
     container_name: eureka
-
     ports:
       - "8761:8761"
+    environment:
+      eureka.instance.hostname: 209.97.160.50
+      eureka.client.serviceUrl.defaultZone: http://209.97.160.50:8761/eureka/
     networks:
       - microservice
-
+  # api-getway
+  gateway:
+    image: tuananh2582000/gateway
+    container_name: gateway
+    ports:
+      - "9191:9191"
+    depends_on:
+      - eureka
+    environment:
+      eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
+    networks:
+      - microservice
+      
   # cloud server
   cloud-server:
     image: tuananh2582000/cloud-server
@@ -21,24 +35,6 @@ services:
       spring.cloud.config.server.git.default-label: main
     networks:
       - microservice
-
-  # api-getway
-  api-gateway:
-    image: tuananh2582000/api-gateway
-    container_name: gateway
-    build:
-      context: api-gateway
-      dockerfile: Dockerfile
-    ports:
-      - "9191:9191"
-    environment:
-      spring.cloud.config.uri: http://cloud-server:8888
-    depends_on:
-      - cloud-serverdoc
-      - eureka
-    networks:
-      - microservice
-
   # my sql
   db:
     image: mysql:5.7
@@ -57,18 +53,13 @@ services:
   user-service:
     image: tuananh2582000/user-service
     container_name: user-service
-    depends_on:
-      - db
-      - cloud-server
-      - eureka
-    restart: always
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/userdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/userdb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: diem66
-      spring.cloud.config.uri: http://cloud-server:8888
+      eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
     networks:
       - microservice
 
@@ -76,21 +67,15 @@ services:
   note-service:
     image: tuananh2582000/note-service
     container_name: note-service
-    depends_on:
-      - db
-      - cloud-server
-      - eureka
-    restart: always
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/notedb
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/notedb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: diem66
-      spring.cloud.config.uri: http://cloud-server:8888
+      eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
     networks:
       - microservice
 
 networks:
   microservice:
-    driver: bridge
