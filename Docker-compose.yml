@@ -24,7 +24,6 @@ services:
       eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
     networks:
       - microservice
-      
   # cloud server
   cloud-server:
     image: tuananh2582000/cloud-server
@@ -35,6 +34,7 @@ services:
       spring.cloud.config.server.git.default-label: main
     networks:
       - microservice
+
   # my sql
   db:
     image: mysql:5.7
@@ -60,6 +60,7 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: diem66
       eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
+      eureka.client.instance: 209.97.160.50
     networks:
       - microservice
 
@@ -74,8 +75,19 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: diem66
       eureka.client.service-url.defaultZone: http://eureka:8761/eureka/
+      eureka.client.instance: 209.97.160.50
     networks:
       - microservice
 
+  frontend:
+    stdin_open: true
+    tty: true
+    image: tuananh2582000/note-reactjs:v1
+    ports:
+      - "80:80"
+    networks:
+      - microservice
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
 networks:
   microservice:
